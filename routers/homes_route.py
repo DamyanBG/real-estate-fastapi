@@ -5,10 +5,10 @@ from models.home_model import Home, HomeCreate, HomeUpdate
 
 homes_router = APIRouter(prefix="/homes", tags=["homes"])
 
-homes_ref = db.collection("homes")
+homes_ref = db.collection("Homes")
 
 
-@homes_router.post("/homes/", response_model=Home)
+@homes_router.post("/", response_model=Home)
 async def create_home(home: HomeCreate):
     """Create a new home listing."""
     data = home.model_dump()
