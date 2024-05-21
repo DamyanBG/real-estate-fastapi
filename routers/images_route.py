@@ -1,7 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from db import db
-from storage.google_cloud_storage import upload_base64_image, generate_signed_url
+from utils.image_compression import compress_image_to_webp
+from utils.utils import separate_data_url_from_base64
+from storage.google_cloud_storage import upload_bytes_image, generate_signed_url
+from image_recognition.google_vision import check_is_safe_image
 from models.image_model import Image, ImageCreate, ImageResp
 
 images_router = APIRouter(prefix="/images", tags=["images"])
@@ -14,7 +17,11 @@ async def create_home(image: ImageCreate):
     """Create a new home listing."""
     data = image.model_dump()
     base64_data = data["photo_base64"]
-    img_file_name = upload_base64_image(base64_data)
+    image_bytes = compress_image_to_webp(separate_data_url_from_base64(base64_data)[1])
+    if not check_is_safe_image(image_bytes):
+        raise HTTPException(status_code=400, detail="Image is not safe for work")
+
+    img_file_name = upload_bytes_image(image_bytes, ".webp", "image/webp")
     new_image_ref = images_ref.document()
     new_image_data = {"file_name": img_file_name}
     new_image_ref.set(new_image_data)

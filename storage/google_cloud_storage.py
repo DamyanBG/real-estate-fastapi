@@ -1,8 +1,5 @@
-import base64
-import re
 from tempfile import TemporaryDirectory
 from uuid import uuid4
-from mimetypes import guess_extension
 from datetime import timedelta, datetime, UTC
 from google.cloud import storage
 from google.cloud.storage.blob import Blob
@@ -14,18 +11,13 @@ from config import BUCKET_NAME
 client = storage.Client(credentials=credentials)
 
 
-def upload_base64_image(base64_image: str):
-    extension_container, base64_data = base64_image.split(",")
-    photo_bytes = base64.b64decode(base64_data.encode("utf-8"))
-    match = re.search(":(.+);", extension_container)
-    mime_type = match.group(1)
-    file_extension = guess_extension(mime_type)
-    file_name = f"{uuid4()}{file_extension}"
+def upload_bytes_image(image_bytes: bytes, image_extension: str, mime_type: str) -> str:
+    file_name = f"{uuid4()}{image_extension}"
 
     with TemporaryDirectory() as temp_dir:
         temp_file_path = f"{temp_dir}/{file_name}"
         with open(temp_file_path, "wb") as temp_file:
-            temp_file.write(photo_bytes)
+            temp_file.write(image_bytes)
         bucket = client.get_bucket(BUCKET_NAME)
 
         # Upload to Google Cloud Storage
